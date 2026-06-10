@@ -1,13 +1,40 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTimer } from "@/hooks/useTimer";
 import { Play, Pause, RotateCcw, Coffee, Sparkles } from "lucide-react";
+import { saveFocusSession, saveSessionStory } from "@/lib/supabase/queries";
+import { createClient } from "@/lib/supabase/client";
 
 export default function FocusPage() {
   const {
-    status, mode, display, progress, sessionCount,
+    status, mode, display, progress, sessionCount, elapsed,
     start, pause, resume, stop, setMode,
   } = useTimer();
+
+  const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (status !== "completed" || savedRef.current) return;
+    savedRef.current = true;
+
+    const mins = Math.max(1, Math.floor(elapsed / 60));
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const session = await saveFocusSession(user.id, mins, mode === "free" ? "free" : "pomodoro");
+      if (mins >= 5 && session) {
+        const story = `Completed a ${mins}-minute focus session. Every minute counts.`;
+        await saveSessionStory(user.id, story, undefined, session.id);
+      }
+    })();
+  }, [status, elapsed, mode]);
+
+  useEffect(() => {
+    if (status === "idle") savedRef.current = false;
+  }, [status]);
 
   const isRunning = status === "focus" || status === "break";
   const isIdle = status === "idle";

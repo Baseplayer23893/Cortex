@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useFocusStore } from "@/store/focus-store";
+import { playSound } from "@/lib/utils/sounds";
 
 export function useTimer() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -11,6 +12,9 @@ export function useTimer() {
   } = useFocusStore();
 
   useEffect(() => {
+    if (status === "focus") playSound("focus-start");
+    else if (status === "break") playSound("break-start");
+
     if (status === "focus" || status === "break") {
       intervalRef.current = setInterval(() => {
         const s = useFocusStore.getState();
@@ -30,6 +34,12 @@ export function useTimer() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (status === "completed") {
+      playSound("focus-end");
+    }
+  }, [status]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

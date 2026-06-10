@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/store/ui-store";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/habits", icon: CheckSquare2, label: "Habits" },
   { href: "/planner", icon: CalendarDays, label: "Planner" },
   { href: "/analytics", icon: BarChart3, label: "Analytics" },
+  { href: "/community", icon: Users, label: "Community" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 

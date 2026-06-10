@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { CanvasBackground } from "@/components/canvas/CanvasBackground";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 export default async function DashboardLayout({
   children,
@@ -23,7 +24,9 @@ export default async function DashboardLayout({
         <Sidebar />
         <div className="flex-1 ml-56">
           <TopBar />
-          <main className="pt-14 p-6">{children}</main>
+          <main className="pt-14 p-6">
+            <PageTransition>{children}</PageTransition>
+          </main>
         </div>
       </div>
     </div>
