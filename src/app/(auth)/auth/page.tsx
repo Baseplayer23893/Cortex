@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils/cn";
-import { Mail, Lock, LogIn, Code, ArrowRight, Circle } from "lucide-react";
+import { Mail, Lock, Code, ArrowRight } from "lucide-react";
 
 function ShaderCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,21 +66,27 @@ float noise(vec2 p) {
 
 void main() {
     vec2 uv = v_texCoord;
-    vec3 charcoal = vec3(0.075, 0.075, 0.082);
-    vec3 baseColor = charcoal;
+
+    vec3 color1 = vec3(0.06, 0.06, 0.07);
+    vec3 color2 = vec3(0.10, 0.09, 0.12);
+    vec3 baseColor = mix(color1, color2, uv.y + sin(u_time * 0.2) * 0.2);
+
     float particles = 0.0;
     for(float i = 0.0; i < 40.0; i++) {
-        vec2 pos = vec2(noise(vec2(i, 11.0)), noise(vec2(i, 22.0)));
-        pos.y = fract(pos.y + u_time * 0.02 * (0.4 + noise(vec2(i, 33.0))));
+        vec2 pos = vec2(noise(vec2(i, 1.0)), noise(vec2(i, 2.0)));
+        pos.y = fract(pos.y - u_time * 0.03 * (0.5 + noise(vec2(i, 3.0))));
         pos.x += sin(u_time * 0.1 + i) * 0.02;
         float dist = length(uv - pos);
-        float size = 0.0008 + noise(vec2(i, 44.0)) * 0.0012;
-        particles += smoothstep(size, 0.0, dist) * (0.3 + 0.7 * sin(u_time * 0.8 + i * 1.5));
+        float size = 0.001 + noise(vec2(i, 4.0)) * 0.002;
+        particles += smoothstep(size, 0.0, dist) * (0.3 + 0.7 * sin(u_time + i));
     }
-    vec3 lavender = vec3(0.77, 0.71, 0.99);
-    vec3 finalColor = baseColor + particles * lavender * 0.5;
-    float vignette = smoothstep(1.3, 0.6, length(uv - 0.5));
+
+    vec3 lavender = vec3(0.82, 0.82, 0.97);
+    vec3 finalColor = baseColor + particles * lavender * 0.6;
+
+    float vignette = smoothstep(1.5, 0.5, length(uv - 0.5));
     finalColor *= vignette;
+
     gl_FragColor = vec4(finalColor, 1.0);
 }`;
 
@@ -138,13 +143,13 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setMessage(null);
 
     try {
       if (tab === "signup") {
@@ -164,7 +169,7 @@ export default function AuthPage() {
         window.location.href = "/dashboard";
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setMessage(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -178,7 +183,6 @@ export default function AuthPage() {
         options: { redirectTo: `${window.location.origin}/api/auth/callback` },
       });
     } catch {
-      // OAuth redirect — noop
     }
     setLoading(false);
   };
@@ -186,97 +190,79 @@ export default function AuthPage() {
   const handleMagicLink = async () => {
     if (!email) return;
     setLoading(true);
-    setError(null);
+    setMessage(null);
     const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) setError(error.message);
-    else setError("Check your email for the login link!");
+    if (error) setMessage(error.message);
+    else setMessage("Check your email for the login link!");
     setLoading(false);
   };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-bg">
-      {/* Static gradient fallback shown before WebGL compiles */}
       <div className="absolute inset-0 bg-gradient-to-br from-bg via-bg to-primary/5" />
       <ShaderCanvas />
 
-      {/* Ambient glow behind card */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] pointer-events-none mix-blend-screen opacity-50" />
+      <div className="absolute top-[-100px] left-[-100px] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[80px] pointer-events-none animate-[drift_20s_alternate_infinite_ease-in-out]" />
+      <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[80px] pointer-events-none animate-[drift_20s_alternate_infinite_ease-in-out]" style={{ animationDelay: "-10s" }} />
 
-      <div className="relative z-10 flex items-center justify-center min-h-full px-6 md:px-16 py-12">
-        {/* Glassmorphism Card */}
+      <div className="relative z-10 flex items-center justify-center min-h-full px-6 py-12">
         <div
-          className="w-full max-w-[420px] animate-in fade-in zoom-in-95 duration-700"
+          className="w-full max-w-[440px]"
           style={{
             animation: "fadeInScaleUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
             opacity: 0,
           }}
         >
           <div className="relative glass-elevated p-8 flex flex-col overflow-hidden">
-            {/* Subtle top-edge highlight */}
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-            {/* Brand Header */}
             <div className="flex flex-col items-center mb-8 gap-2 text-center">
-              <Circle className="size-10 text-primary drop-shadow-[0_0_12px_rgba(195,195,233,0.3)] mb-2" fill="currentColor" />
+              <div className="size-10 rounded-lg bg-primary-container flex items-center justify-center mb-2">
+                <span className="text-on-primary-container text-[28px] leading-none font-bold">A</span>
+              </div>
               <h1 className="text-[32px] font-display font-semibold leading-tight tracking-tight text-primary">
                 Aura
               </h1>
-              <p className="text-base text-text-muted">Enter your digital sanctuary.</p>
+              <p className="text-base text-text-muted">Welcome to Focus</p>
             </div>
 
-            {/* Tabs */}
-            <div className="flex p-1 bg-surface/50 rounded-full mb-6 border border-glass-border/50">
+            <div className="flex p-1 bg-black/20 rounded-full mb-6 relative">
+              <div
+                className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white/10 rounded-full transition-transform duration-300"
+                style={{ transform: tab === "signin" ? "translateX(0)" : "translateX(100%)" }}
+              />
               <button
-                onClick={() => { setTab("signin"); setError(null); }}
-                className={cn(
-                  "flex-1 py-2 px-4 rounded-full font-medium text-sm relative overflow-hidden transition-all",
-                  tab === "signin"
-                    ? "bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-text"
-                    : "text-text-muted hover:text-text",
-                )}
+                onClick={() => { setTab("signin"); setMessage(null); }}
+                className="relative z-10 flex-1 py-2 text-center text-sm font-semibold tracking-wider transition-colors"
               >
-                {tab === "signin" && (
-                  <div className="absolute inset-0 bg-primary/10 rounded-full mix-blend-screen opacity-50 shadow-[0_0_12px_rgba(196,181,253,0.3)]" />
-                )}
-                <span className="relative z-10">Sign In</span>
+                <span className={tab === "signin" ? "text-primary" : "text-text-muted"}>Sign In</span>
               </button>
               <button
-                onClick={() => { setTab("signup"); setError(null); }}
-                className={cn(
-                  "flex-1 py-2 px-4 rounded-full font-medium text-sm relative overflow-hidden transition-all",
-                  tab === "signup"
-                    ? "bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-text"
-                    : "text-text-muted hover:text-text",
-                )}
+                onClick={() => { setTab("signup"); setMessage(null); }}
+                className="relative z-10 flex-1 py-2 text-center text-sm font-semibold tracking-wider transition-colors"
               >
-                {tab === "signup" && (
-                  <div className="absolute inset-0 bg-primary/10 rounded-full mix-blend-screen opacity-50 shadow-[0_0_12px_rgba(196,181,253,0.3)]" />
-                )}
-                <span className="relative z-10">Sign Up</span>
+                <span className={tab === "signup" ? "text-primary" : "text-text-muted"}>Sign Up</span>
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {tab === "signup" && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium tracking-wider text-text-muted ml-1" htmlFor="name">Your name</label>
-                  <div className="relative group">
-                    <input
-                      id="name"
-                      type="text"
-                      placeholder="Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-surface/40 border border-glass-border rounded-full py-3 pl-4 pr-4 text-sm text-text placeholder-text-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 focus:bg-surface/60 transition-all shadow-inner"
-                    />
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold tracking-wider text-text-muted ml-1" htmlFor="name">Your name</label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-black/20 border border-white/[0.08] rounded-full py-3 px-4 text-sm text-primary placeholder:text-text-muted/40 focus:border-primary-container focus:shadow-[0_0_0_4px_rgba(209,209,247,0.15)] focus:bg-black/30 focus:outline-none transition-all"
+                  />
                 </div>
               )}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium tracking-wider text-text-muted ml-1" htmlFor="email">Email address</label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-text-muted/50 group-focus-within:text-primary transition-colors z-10" />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold tracking-wider text-text-muted ml-1" htmlFor="email">Email address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-text-muted/50" />
                   <input
                     id="email"
                     type="email"
@@ -284,17 +270,17 @@ export default function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full bg-surface/40 border border-glass-border rounded-full py-3 pl-11 pr-4 text-sm text-text placeholder-text-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 focus:bg-surface/60 transition-all shadow-inner"
+                    className="w-full bg-black/20 border border-white/[0.08] rounded-full py-3 pl-11 pr-4 text-sm text-primary placeholder:text-text-muted/40 focus:border-primary-container focus:shadow-[0_0_0_4px_rgba(209,209,247,0.15)] focus:bg-black/30 focus:outline-none transition-all"
                   />
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center ml-1">
-                  <label className="text-xs font-medium tracking-wider text-text-muted" htmlFor="password">Password</label>
-                  <a className="text-xs font-medium tracking-wider text-primary hover:text-primary/80 transition-colors" href="#">Forgot?</a>
+                  <label className="text-xs font-semibold tracking-wider text-text-muted" htmlFor="password">Password</label>
+                  <a className="text-xs font-semibold tracking-wider text-primary/70 hover:text-primary transition-colors" href="#">Forgot?</a>
                 </div>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-text-muted/50 group-focus-within:text-primary transition-colors z-10" />
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-text-muted/50" />
                   <input
                     id="password"
                     type="password"
@@ -302,19 +288,19 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full bg-surface/40 border border-glass-border rounded-full py-3 pl-11 pr-4 text-sm text-text placeholder-text-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 focus:bg-surface/60 transition-all shadow-inner"
+                    className="w-full bg-black/20 border border-white/[0.08] rounded-full py-3 pl-11 pr-4 text-sm text-primary placeholder:text-text-muted/40 focus:border-primary-container focus:shadow-[0_0_0_4px_rgba(209,209,247,0.15)] focus:bg-black/30 focus:outline-none transition-all"
                   />
                 </div>
               </div>
 
-              {error && (
-                <p className="text-xs px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">{error}</p>
+              {message && (
+                <p className="text-xs px-4 py-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">{message}</p>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="relative mt-2 w-full py-3.5 px-6 bg-primary hover:bg-white text-bg font-bold text-xs uppercase tracking-widest rounded-full shadow-[0_0_20px_var(--glow)] hover:shadow-[0_0_30px_var(--glow)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden group disabled:opacity-50 disabled:pointer-events-none"
+                className="relative mt-2 w-full py-3.5 px-6 bg-primary-container text-on-primary-container font-bold text-xs uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(209,209,247,0.25)] hover:shadow-[0_0_30px_rgba(209,209,247,0.35)] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -323,77 +309,67 @@ export default function AuthPage() {
                     <span className="size-1.5 rounded-full bg-current animate-pulse [animation-delay:300ms]" />
                   </span>
                 ) : (
-                  <>
-                    <span className="relative z-10">{tab === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}</span>
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
-                  </>
+                  tab === "signin" ? "Continue" : "Create Account"
                 )}
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="relative flex items-center py-4">
-              <div className="flex-grow border-t border-glass-border" />
-              <span className="flex-shrink-0 mx-4 text-text-muted/50 text-xs font-medium tracking-wider uppercase">or continue with</span>
-              <div className="flex-grow border-t border-glass-border" />
+            <button
+              onClick={handleMagicLink}
+              disabled={loading || !email}
+              className="mt-4 text-xs font-semibold tracking-wider text-text-muted/50 hover:text-text-muted transition-colors flex items-center justify-center gap-1 group disabled:opacity-30"
+            >
+              Email me a magic link
+              <ArrowRight className="size-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </button>
+
+            <div className="relative flex items-center py-5">
+              <div className="flex-grow h-px bg-white/10" />
+              <span className="flex-shrink-0 mx-4 text-text-muted/40 text-xs font-semibold tracking-widest uppercase">Or continue with</span>
+              <div className="flex-grow h-px bg-white/10" />
             </div>
 
-            {/* Social Logins */}
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => handleOAuth("google")}
                 disabled={loading}
-                className="flex items-center justify-center gap-3 w-full py-3 px-4 bg-surface/30 hover:bg-surface/60 border border-glass-border hover:border-white/10 rounded-full text-sm font-medium text-text transition-all backdrop-blur-sm shadow-sm disabled:opacity-50"
+                className="flex items-center justify-center gap-3 py-3 rounded-full bg-white/[0.03] backdrop-blur-[40px] border border-white/[0.12] hover:bg-white/10 transition-all disabled:opacity-50"
               >
-                <LogIn className="size-5 text-text-muted group-hover:text-primary transition-colors" />
-                Continue with Google
+                <svg className="size-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#e4e2e4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#e4e2e4"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#e4e2e4"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#e4e2e4"/>
+                </svg>
+                <span className="text-xs font-semibold text-text-muted">Google</span>
               </button>
               <button
                 onClick={() => handleOAuth("github")}
                 disabled={loading}
-                className="flex items-center justify-center gap-3 w-full py-3 px-4 bg-surface/30 hover:bg-surface/60 border border-glass-border hover:border-white/10 rounded-full text-sm font-medium text-text transition-all backdrop-blur-sm shadow-sm disabled:opacity-50"
+                className="flex items-center justify-center gap-3 py-3 rounded-full bg-white/[0.03] backdrop-blur-[40px] border border-white/[0.12] hover:bg-white/10 transition-all disabled:opacity-50"
               >
-                <Code className="size-5 text-text-muted group-hover:text-primary transition-colors" />
-                Continue with GitHub
+                <Code className="size-5 text-text-muted" />
+                <span className="text-xs font-semibold text-text-muted">GitHub</span>
               </button>
             </div>
 
-            {/* Magic Link */}
-            <div className="mt-5 text-center">
-              <button
-                onClick={handleMagicLink}
-                disabled={loading || !email}
-                className="text-xs font-medium tracking-wider text-text-muted/60 hover:text-text-muted transition-colors flex items-center justify-center gap-1 group disabled:opacity-30"
-              >
-                Send magic link instead
-                <ArrowRight className="size-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-              </button>
-            </div>
+            <footer className="mt-6 flex justify-center gap-4">
+              <a className="text-xs text-text-muted/40 hover:text-text-muted transition-colors" href="#">Privacy Policy</a>
+              <span className="text-white/10">•</span>
+              <a className="text-xs text-text-muted/40 hover:text-text-muted transition-colors" href="#">Terms of Service</a>
+            </footer>
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-6 md:px-16 py-4 gap-4 border-t border-glass-border/50">
-        <div className="flex items-center gap-2">
-          <span className="text-primary font-display font-bold">Aura</span>
-          <span className="text-xs text-text-muted">© 2024 Aura. Crafted for deep focus.</span>
-        </div>
-        <nav className="flex gap-6">
-          <a className="text-xs text-text-muted/60 hover:text-primary transition-colors" href="#">Privacy</a>
-          <a className="text-xs text-text-muted/60 hover:text-primary transition-colors" href="#">Terms</a>
-          <a className="text-xs text-text-muted/60 hover:text-primary transition-colors" href="#">Support</a>
-          <a className="text-xs text-text-muted/60 hover:text-primary transition-colors" href="#">Twitter</a>
-        </nav>
-      </footer>
 
       <style>{`
         @keyframes fadeInScaleUp {
           from { opacity: 0; transform: scale(0.97) translateY(10px); }
           to   { opacity: 1; transform: scale(1) translateY(0); }
         }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
+        @keyframes drift {
+          from { transform: translate(-10%, -10%); }
+          to   { transform: translate(10%, 10%); }
         }
       `}</style>
     </div>
