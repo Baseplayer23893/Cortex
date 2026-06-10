@@ -119,7 +119,10 @@ On first sign-up, a Supabase database trigger creates the user's profile:
 
 ```sql
 CREATE OR REPLACE FUNCTION create_profile_for_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO profiles (id, name, avatar_url)
   VALUES (

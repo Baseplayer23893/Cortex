@@ -23,32 +23,39 @@ function ShaderCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    let animId = 0;
+    let gl: WebGLRenderingContext | null = null;
 
-    const gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
-    if (!gl) return;
+    const idle = typeof requestIdleCallback !== "undefined"
+      ? requestIdleCallback
+      : ((cb: () => void) => setTimeout(cb, 1));
 
-    const syncSize = () => {
-      const w = canvas.clientWidth || 1280;
-      const h = canvas.clientHeight || 720;
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
+    idle(() => {
+      gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+      if (!gl) return;
+
+      const syncSize = () => {
+        const w = canvas!.clientWidth || 1280;
+        const h = canvas!.clientHeight || 720;
+        if (canvas!.width !== w || canvas!.height !== h) {
+          canvas!.width = w;
+          canvas!.height = h;
+        }
+      };
+
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(syncSize).observe(canvas!);
       }
-    };
+      syncSize();
 
-    if (typeof ResizeObserver !== "undefined") {
-      new ResizeObserver(syncSize).observe(canvas);
-    }
-    syncSize();
-
-    const vs = `attribute vec2 a_position;
+      const vs = `attribute vec2 a_position;
 varying vec2 v_texCoord;
 void main() {
   v_texCoord = a_position * 0.5 + 0.5;
   gl_Position = vec4(a_position, 0.0, 1.0);
 }`;
 
-    const fs = `precision highp float;
+      const fs = `precision highp float;
 varying vec2 v_texCoord;
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -78,42 +85,43 @@ void main() {
     gl_FragColor = vec4(finalColor, 1.0);
 }`;
 
-    const prog = gl.createProgram()!;
-    const cs = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    };
-    gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
-    gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
+      const prog = gl!.createProgram()!;
+      const cs = (type: number, src: string) => {
+        const s = gl!.createShader(type)!;
+        gl!.shaderSource(s, src);
+        gl!.compileShader(s);
+        return s;
+      };
+      gl!.attachShader(prog, cs(gl!.VERTEX_SHADER, vs));
+      gl!.attachShader(prog, cs(gl!.FRAGMENT_SHADER, fs));
+      gl!.linkProgram(prog);
+      gl!.useProgram(prog);
 
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, "a_position");
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+      const buf = gl!.createBuffer();
+      gl!.bindBuffer(gl!.ARRAY_BUFFER, buf);
+      gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl!.STATIC_DRAW);
+      const pos = gl!.getAttribLocation(prog, "a_position");
+      gl!.enableVertexAttribArray(pos);
+      gl!.vertexAttribPointer(pos, 2, gl!.FLOAT, false, 0, 0);
 
-    const uTime = gl.getUniformLocation(prog, "u_time");
-    const uRes = gl.getUniformLocation(prog, "u_resolution");
-    const uMouse = gl.getUniformLocation(prog, "u_mouse");
+      const uTime = gl!.getUniformLocation(prog, "u_time");
+      const uRes = gl!.getUniformLocation(prog, "u_resolution");
+      const uMouse = gl!.getUniformLocation(prog, "u_mouse");
 
-    window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mousemove", handleMouseMove);
 
-    const render = (t: number) => {
-      if (typeof ResizeObserver === "undefined") syncSize();
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      if (uTime) gl.uniform1f(uTime, t * 0.001);
-      if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
-      if (uMouse) gl.uniform2f(uMouse, mouseRef.current.x, mouseRef.current.y);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      const render = (t: number) => {
+        if (typeof ResizeObserver === "undefined") syncSize();
+        gl!.viewport(0, 0, canvas!.width, canvas!.height);
+        if (uTime) gl!.uniform1f(uTime, t * 0.001);
+        if (uRes) gl!.uniform2f(uRes, canvas!.width, canvas!.height);
+        if (uMouse) gl!.uniform2f(uMouse, mouseRef.current.x, mouseRef.current.y);
+        gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
+        animId = requestAnimationFrame(render);
+      };
+
       animId = requestAnimationFrame(render);
-    };
-
-    let animId = requestAnimationFrame(render);
+    });
 
     return () => {
       cancelAnimationFrame(animId);
@@ -187,6 +195,8 @@ export default function AuthPage() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-bg">
+      {/* Static gradient fallback shown before WebGL compiles */}
+      <div className="absolute inset-0 bg-gradient-to-br from-bg via-bg to-primary/5" />
       <ShaderCanvas />
 
       {/* Ambient glow behind card */}

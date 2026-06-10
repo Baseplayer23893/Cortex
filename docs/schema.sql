@@ -127,7 +127,10 @@ CREATE INDEX IF NOT EXISTS idx_stories_enrollment ON session_stories(enrollment_
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION create_profile_for_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO profiles (id, name, avatar_url)
   VALUES (
@@ -155,6 +158,9 @@ CREATE POLICY "Users can read own profile"
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+CREATE POLICY "Users can insert own profile"
+  ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users own focus sessions" ON focus_sessions;
