@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { Mail, Lock, LogIn, Code, ArrowRight, Circle } from "lucide-react";
 
@@ -132,7 +131,6 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,14 +146,14 @@ export default function AuthPage() {
           options: { data: { full_name: name } },
         });
         if (error) throw error;
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
