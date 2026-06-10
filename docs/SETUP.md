@@ -32,12 +32,12 @@ cp .env.local.example .env.local
 
 ```sql
 INSERT INTO journey_templates (id, title, description, goal_type, goal_count, icon) VALUES
-  ('first-steps', 'First Steps', 'A gentle beginning. One week of daily focus.', 'days', 7, '🌱'),
-  ('two-weeks', 'Two Weeks of Focus', 'Building momentum. Two consistent weeks.', 'days', 14, '🔥'),
+  ('first-steps', 'First Steps', 'A gentle beginning. One week of daily focus.', 'days', 7, '✦'),
+  ('two-weeks', 'Two Weeks of Focus', 'Building momentum. Two consistent weeks.', 'days', 14, '✦'),
   ('monthly-path', 'The Monthly Path', 'The classic. 30 days of focused presence.', 'days', 30, '✦'),
-  ('quarter-mile', 'Quarter Mile', 'For the dedicated. 50 focused sessions.', 'sessions', 50, '⚡'),
-  ('century', 'Century', 'The long haul. 100 hours of deep work.', 'hours', 100, '🌟'),
-  ('marathon', 'The Marathon', 'Two-month commitment. You emerge different.', 'days', 60, '🏔️');
+  ('quarter-mile', 'Quarter Mile', 'For the dedicated. 50 focused sessions.', 'sessions', 50, '✦'),
+  ('century', 'Century', 'The long haul. 100 hours of deep work.', 'hours', 100, '✦'),
+  ('marathon', 'The Marathon', 'Two-month commitment. You emerge different.', 'days', 60, '✦');
 ```
 
 5. Go to Project Settings → API and copy your URL and anon key

@@ -166,10 +166,14 @@ export default function AuthPage() {
 
   const handleOAuth = async (provider: "google" | "github") => {
     setLoading(true);
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
-    });
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      });
+    } catch {
+      // OAuth redirect — noop
+    }
     setLoading(false);
   };
 
@@ -376,6 +380,10 @@ export default function AuthPage() {
       </footer>
 
       <style>{`
+        @keyframes fadeInScaleUp {
+          from { opacity: 0; transform: scale(0.97) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
         @keyframes shimmer {
           100% { transform: translateX(100%); }
         }
