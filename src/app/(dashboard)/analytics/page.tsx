@@ -15,133 +15,66 @@ export default function AnalyticsPage() {
   const sessionCount = useFocusStore((s) => s.sessionCount);
   const elapsed = useFocusStore((s) => s.elapsed);
   const habits = useHabitStore((s) => s.habits);
-
-  const totalStreak = habits.reduce((max, h) => {
-    const logs = Object.entries(h.logs).filter(([, v]) => v).length;
-    return Math.max(max, logs);
-  }, 0);
+  const totalStreak = habits.reduce((max, h) => Math.max(max, Object.entries(h.logs).filter(([, v]) => v).length), 0);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-          Analytics
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Your sanctuary for deep work is ready. Here&apos;s your focus overview.
-        </p>
+        <h1 className="text-2xl font-bold text-glow" style={{ fontFamily: "var(--font-display)" }}>Analytics</h1>
+        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>Your focus overview.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <GlassCard padding="md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
-              <Clock size={18} style={{ color: "var(--primary)" }} />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Efficiency</p>
-              <p className="text-xl font-bold mt-0.5" style={{ fontFamily: "var(--font-display)" }}>Total Focus Time</p>
-              <p className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--font-display)" }}>{formatHours(elapsed)}</p>
-            </div>
-          </div>
-        </GlassCard>
-        <GlassCard padding="md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
-              <Layers size={18} style={{ color: "var(--secondary)" }} />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Activity</p>
-              <p className="text-xl font-bold mt-0.5" style={{ fontFamily: "var(--font-display)" }}>Sessions</p>
-              <p className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--font-display)" }}>{sessionCount}</p>
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Clock, label: "Total Focus Time", value: formatHours(elapsed), sub: "Efficiency", color: "var(--primary)" },
+          { icon: Layers, label: "Sessions", value: String(sessionCount), sub: "Activity", color: "var(--secondary)" },
+          { icon: Zap, label: "Best Streak", value: `${totalStreak} days`, sub: "Consistency", color: "var(--accent)" },
+        ].map((item, i) => (
+          <div key={i} className="card">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
+                <item.icon size={15} style={{ color: item.color }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{item.sub}</p>
+                <p className="text-base font-bold text-glow mt-0.5" style={{ fontFamily: "var(--font-display)" }}>{item.value}</p>
+              </div>
             </div>
           </div>
-        </GlassCard>
-        <GlassCard padding="md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
-              <Zap size={18} style={{ color: "var(--accent)" }} />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Consistency</p>
-              <p className="text-xl font-bold mt-0.5" style={{ fontFamily: "var(--font-display)" }}>Best Streak</p>
-              <p className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--font-display)" }}>{totalStreak} days</p>
-            </div>
-          </div>
-        </GlassCard>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassCard padding="lg">
-          <h2 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Weekly Focus Distribution
-          </h2>
-          <p className="text-xs mb-6" style={{ color: "var(--text-muted)" }}>
-            Average focus hours per day
-          </p>
-          <div className="flex items-end justify-between gap-2 h-32">
-            {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
-              <div key={`${day}-${i}`} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  className="w-full rounded-lg transition-all"
-                  style={{
-                    height: `${sessionCount > 0 ? 20 + (sessionCount % 60) : 8}%`,
-                    background: i < 5 ? "var(--primary)" : "var(--text-muted)",
-                    opacity: 0.3,
-                    minHeight: "8px",
-                  }}
-                />
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{day}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card">
+          <h2 className="text-xs font-semibold mb-3 text-glow" style={{ fontFamily: "var(--font-display)" }}>Weekly Focus Distribution</h2>
+          <p className="text-[10px] mb-4" style={{ color: "var(--text-muted)" }}>Average hours per day</p>
+          <div className="flex items-end justify-between gap-2 h-28">
+            {["M","T","W","T","F","S","S"].map((day, i) => (
+              <div key={`${day}-${i}`} className="flex-1 flex flex-col items-center gap-1.5">
+                <div className="w-full rounded transition-all" style={{ height: `${sessionCount > 0 ? 20 + (sessionCount % 60) : 8}%`, background: i < 5 ? "var(--primary)" : "var(--text-muted)", opacity: 0.3, minHeight: "6px" }} />
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{day}</span>
               </div>
             ))}
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard padding="lg">
-          <h2 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Monthly Momentum
-          </h2>
-          <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-            Activity density for the current period
-          </p>
-          <div className="grid grid-cols-7 gap-1.5">
-            {Array.from({ length: 35 }).map((_, i) => {
-              const active = i < sessionCount + habits.length;
-              return (
-                <div
-                  key={i}
-                  className="aspect-square rounded-md transition-all"
-                  style={{
-                    background: active ? "var(--primary)" : "var(--glass)",
-                    opacity: active ? 0.15 + (i % 5) * 0.15 : 0.5,
-                    border: active ? "1px solid var(--glass-border)" : "1px solid transparent",
-                  }}
-                />
-              );
-            })}
+        <div className="card">
+          <h2 className="text-xs font-semibold mb-3 text-glow" style={{ fontFamily: "var(--font-display)" }}>Monthly Momentum</h2>
+          <p className="text-[10px] mb-3" style={{ color: "var(--text-muted)" }}>Activity density</p>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded transition-all" style={{ background: i < sessionCount + habits.length ? "var(--primary)" : "var(--glass)", opacity: i < sessionCount + habits.length ? 0.15 + (i % 5) * 0.15 : 0.4 }} />
+            ))}
           </div>
-        </GlassCard>
+        </div>
       </div>
 
-      <GlassCard padding="lg" className="text-center">
-        <div className="flex justify-center mb-4">
-          <Sparkles size={24} style={{ color: "var(--primary)" }} />
-        </div>
-        <h2 className="text-lg font-semibold mb-2" style={{ fontFamily: "var(--font-display)" }}>
-          The Flow State awaits.
-        </h2>
-        <p className="text-sm mb-6 max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>
-          Aura Analytics tracks your deep work patterns to help you find your peak productivity windows. Start a session to see your live data reflow.
-        </p>
-        <Link
-          href="/focus"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 glow"
-          style={{ background: "var(--primary)", color: "#131315", border: "none" }}
-        >
-          <Play size={16} fill="#131315" />
-          Start New Session
-        </Link>
-      </GlassCard>
+      <div className="card text-center py-8">
+        <Sparkles size={20} style={{ color: "var(--primary)" }} className="mx-auto mb-3" />
+        <h2 className="text-base font-semibold text-glow mb-1" style={{ fontFamily: "var(--font-display)" }}>The Flow State awaits.</h2>
+        <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: "var(--text-muted)" }}>Start a session to see your live data reflow.</p>
+        <Link href="/focus" className="btn btn-primary text-xs"><Play size={12} /> Start New Session</Link>
+      </div>
     </div>
   );
 }

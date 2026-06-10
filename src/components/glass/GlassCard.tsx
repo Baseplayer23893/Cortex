@@ -1,46 +1,35 @@
 "use client";
 
-import { type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
-interface GlassCardProps {
-  children: ReactNode;
-  className?: string;
+interface Props {
+  children: React.ReactNode;
   padding?: "sm" | "md" | "lg";
   hover?: boolean;
-  glow?: boolean;
-  as?: "div" | "button" | "form";
+  className?: string;
   onClick?: () => void;
+  glow?: boolean;
 }
 
-const paddingMap = {
-  sm: "p-3",
-  md: "p-5",
-  lg: "p-8",
-};
+export function GlassCard({ children, padding = "md", hover, className, onClick, glow }: Props) {
+  const pad = {
+    sm: "p-3",
+    md: "p-4",
+    lg: "p-6",
+  };
 
-export function GlassCard({
-  children,
-  className,
-  padding = "md",
-  hover,
-  glow,
-  as: Tag = "div",
-  onClick,
-}: GlassCardProps) {
   return (
-    <Tag
+    <div
       onClick={onClick}
       className={cn(
-        "glass",
-        paddingMap[padding],
-        hover && "transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5",
-        glow && "glow-sm",
-        onClick && "cursor-pointer",
+        "card",
+        pad[padding],
+        hover && "card-hover cursor-pointer",
+        glow && "neon-active",
         className,
       )}
     >
       {children}
-    </Tag>
+    </div>
   );
 }
